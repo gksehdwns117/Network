@@ -1,0 +1,794 @@
+
+*********************************************************************************************************************************************************************************************
+### 모든 VLAN 라우팅을 구현 ###
+0. 라우팅 프로토콜은 eigrp 1을 사용하세요.
+1. 아래의 스위치 암호 구성 값들로 구성하세요. Console : conpass / VTY : telpass / Enable : ciscosec
+2. 사용하지 않는 모든 SWITCHPORT들은 SHUTDOWN 하세요.
+3. 모든 스위치들을 VTP Transparent 모드로 구성하세요.(DOMAIN:ict.com / 암호:ictpassword
+4. 모든 호스트들은 자신 네트워크의 게이트웨이와 통신이 가능하게 하세요.
+5. 모든 이더채널은 L2로 구성하세요.
+6. 각 VLAN의 RootBridge
+    DSW1 : VLAN 10,30
+    DSW2 : VLAN 20,40
+7. spanning-tree mode는 RSTP를 사용하세요. 그리고 BPDU guard,RootGuard를 설정하세요.
+8.L3 Switches를 이용하여 모든 VLAN사이의 라우팅을 구현하세요.
+9. Trunk Port에 allowed vlan을 설정하시고, native vlan을 vlan 1001로 설정하세요.
+10. 관리PC에서 모든 스위에 telnet으로 연결하여 원격관리 할 수 있다.
+10. EDGE라우터는 내부네트워크와 외부 네트워크를 연결하는 라우터입니다.
+11.ISP라우터는 인터넷라우터입니다.
+*********************************************************************************************************************************************************************************************
+
+======== ASW1 ========
+en	: privilege mode 
+conf t	: global configuration mode
+hostname ASW1 : host name
+no ip domain-lookup : 도메인 검색 비활성화
+enable secret ciscosec	: privilege mode 진입시 암호
+line con 0		: 라인 콘솔 모드 진입
+
+ exec-timeout 60	: 세션 타임 아웃값
+ password conpass	: 콘솔 암호
+ login	: 콘솔 암호 검사
+ exit	: 현 모드를 벗어나라
+line vty 0 4	: 라인 vty 모드 진입
+ password telpass	: 텔넷 암호
+ login	: 텔넷 암호 검사
+ exit
+interface range fa 0/1 - 24 , gi 0/1 - 2	: 인터페이스를 범위로 지정
+						  모든 port 지정
+ shutdown	: 인터페이스 셧다운
+ exit
+vtp mode transparent	: vtp 모드를 트랜스페어런트
+vtp domain ict.com		: vtp 도메인 네임 설정
+vtp password ictpassword	: vtp 암호 설정
+!	: 주석
+vlan 10	: 브이랜 10 생성
+ name Sales	: 브이랜 10 이름 지정
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+int range f0/1 , f0/11
+ switchport mode trunk	: 트렁크 모드 설정
+ switchport trunk allowed vlan 1,10,20,30,40	: 트렁크에 허용된 브이랜 설정
+ switchport trunk native vlan 1001	: 트렁크에 네이티브 브이랜 설정
+ channel-group 1 mode on	: 이더채널 구성 및 수동으로 설정
+ no shutdown	: 이더채널 활성화
+ exit
+int ra f0/8-9
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface range fastEthernet 0/2 - 3
+ switchport mode access
+ switchport access vlan 10
+ no shutdown
+ exit
+int vlan 1		: SVI vlan1 
+ ip address 10.1.1.1 255.255.255.0
+ no shutdown
+ exit
+int fastEthernet 0/20
+ no shutdown
+ desc "Connected to management desktop" : 설명문
+ 					  >Interface의 description 설정
+end
+
+======== ASW2 ========
+en
+conf t
+hostname ASW2
+no ip domain-lookup
+enable secret ciscosec
+line con 0
+ logging synchronous
+ exec-timeout 60
+ password conpass
+ login
+ exit
+line vty 0 4
+ password telpass
+ login
+ exit
+interface range fa 0/1 - 24 , gi 0/1 - 2
+ shutdown
+ exit
+vtp mode transparent
+vtp domain ict.com
+vtp password ictpassword
+!
+vlan 10
+ name Sales
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+int ra f0/1 , f0/12
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 1 mode on
+ no shutdown
+ exit
+int ra f0/10-11
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface range fastEthernet 0/2 - 3
+ switchport mode access
+ switchport access vlan 20
+ no shutdown
+ exit
+int vlan 1
+ ip address 10.1.1.2 255.255.255.0
+ no shutdown
+ exit
+end
+
+
+======== ASW3 ========
+en
+conf t
+hostname ASW3
+no ip domain-lookup
+enable secret ciscosec
+line con 0
+ logging synchronous
+ exec-timeout 60
+ password conpass
+ login
+ exit
+line vty 0 4
+ password telpass
+ login
+ exit
+interface range fa 0/1 - 24 , gi 0/1 - 2
+ shutdown
+ exit
+vtp mode transparent
+vtp domain ict.com
+vtp password ictpassword
+!
+vlan 10
+ name Sales
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+int ra f0/1 , f0/13
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 1 mode on
+ no shutdown
+ exit
+int ra f0/4-5
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface range fastEthernet 0/2 - 3
+ switchport mode access
+ switchport access vlan 30
+ no shutdown
+ exit
+int vlan 1
+ ip address 10.1.1.3 255.255.255.0
+ no shutdown
+ exit
+end
+
+======== ASW4 ========
+en
+conf t
+hostname ASW4
+no ip domain-lookup
+enable secret ciscosec
+line con 0
+ logging synchronous
+ exec-timeout 60
+ password conpass
+ login
+ exit
+line vty 0 4
+ password telpass
+ login
+exit
+ interface range fa 0/1 - 24 , gi 0/1 - 2
+ shutdown
+ exit
+vtp mode transparent
+vtp domain ict.com
+vtp password ictpassword
+!
+vlan 10
+ name Sales
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+int ra f0/1 , f0/14
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 1 mode on
+ no shutdown
+ exit
+int ra f0/6-7
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface range fastEthernet 0/2 - 3
+ switchport mode access
+ switchport access vlan 40
+ no shutdown
+ exit
+int vlan 1
+ ip address 10.1.1.4 255.255.255.0
+ no shutdown
+ exit
+end
+
+
+========= DSW1 ==========
+en
+conf t
+hostname DSW1
+no ip domain-lookup
+interface range f0/1 - 24 , gi 0/1 - 2
+ shutdown
+ exit
+vtp mode transparent
+vtp domain ict.com
+vtp password ictpassword
+!
+vlan 10
+ name Sales
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+ password conpass
+ login
+ exit
+line vty 0 4
+ password telpass
+ login
+ exit
+!==========L2 Etherchannel============
+int ra f0/1 , f0/11
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 1 mode on
+ no shutdown
+ exit
+int ra f0/2 , f0/12
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+int ra f0/3 , f0/13
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 3 mode on
+ no shutdown
+ exit
+int ra f0/4 , f0/14
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 4 mode on
+ no shutdown
+ exit
+int ra f0/21-24
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 5 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 3
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 4
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+interface port-channel 5
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+int vlan 1
+ ip address 10.1.1.10 255.255.255.0
+ no shutdown
+ exit
+spanning-tree vlan 1 root primary	: 브이랜1의 루트 브릿지
+spanning-tree vlan 10 root primary
+spanning-tree vlan 30 root primary
+spanning-tree vlan 20 root secondary
+spanning-tree vlan 40 root secondary
+end
+
+
+===================================
+!!!DSW2
+en
+conf t
+hostname DSW2
+no ip domain-lookup
+interface range f0/1 - 24 , gi 0/1 - 2
+ shutdown
+ exit
+line con 0
+ exec-timeout 0 0
+ logging synchronous
+ password conpass
+ login
+ exit
+line vty 0 4
+ password telpass
+ login
+ exit
+vtp mode transparent
+vtp domain ict.com
+vtp password ictpassword
+!
+vlan 10
+ name Sales
+ exit
+vlan 20
+ name ENG
+ exit
+vlan 30
+ name HR
+ exit
+vlan 40
+ name Marketing
+ exit
+vlan 1001
+ name tr-native
+ exit
+!========L2 Etherchannel=======
+int ra f0/8-9
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 1 mode on
+ no shutdown
+ exit
+int ra f0/10-11
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 2 mode on
+ no shutdown
+ exit
+int ra f0/4-5
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 3 mode on
+ no shutdown
+ exit
+int ra f0/6-7
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 4 mode on
+ no shutdown
+ exit
+int ra f0/21-24
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ channel-group 5 mode on
+ no shutdown
+ exit
+interface port-channel 1
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+no shutdown
+ exit
+interface port-channel 2
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 3
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 4
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+interface port-channel 5
+ shutdown
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 1,10,20,30,40
+ switchport trunk native vlan 1001
+ no shutdown
+ exit
+int vlan 1
+ ip address 10.1.1.20 255.255.255.0
+ no shutdown
+ exit
+spanning-tree vlan 1 root secondary	: 브이랜 1의 세컨더리 설정
+spanning-tree vlan 20 root primary
+spanning-tree vlan 40 root primary
+spanning-tree vlan 10 root secondary
+spanning-tree vlan 30 root secondary
+end
+
+
+=========================================
+Link type 변경
+=========================================
+!!! DSW1 ~ 2
+en
+conf t
+int po 1
+ spanning-tree link-type point-to-point
+ exit
+int po 2
+ spanning-tree link-type point-to-point
+ exit
+int po 3
+ spanning-tree link-type point-to-point
+ exit
+int po 4
+ spanning-tree link-type point-to-point
+ exit
+int po 5
+ spanning-tree link-type point-to-point
+ exit
+end
+
+
+!!!ASW1 ~ 4
+en
+conf t
+int po 1
+ spanning-tree link-type point-to-point
+ exit
+int po 2
+ spanning-tree link-type point-to-point
+ exit
+end
+
+
+
+============================================
+RSTP 및 BPDUGuard
+============================================
+!!! ASW1 ~ 4
+en
+conf t
+spanning-tree mode rapid-pvst	: rstp 모드로 변경
+!
+int ra f0/2 - 3
+ spanning-tree bpduguard enable	: bpduguard 활성
+ exit
+end
+
+
+=======================================
+RootGurad 설정
+=======================================
+!!! DSW1
+en
+conf t
+spanning-tree mode rapid-pvst
+!
+int ra f0/1 , f0/11
+ spanning-tree guard root	: 루트가드 설정
+ exit
+int ra f0/3 , f0/13
+ spanning-tree guard root
+ exit
+interface port-channel 1
+ spanning-tree guard root
+ exit
+interface port-channel 3
+ spanning-tree guard root 
+ exit
+end
+
+
+======================================
+!!! DSW2
+en
+conf t
+spanning-tree mode rapid-pvst
+!
+int ra f0/10-11
+ spanning-tree guard root
+ exit
+int ra f0/6-7
+ spanning-tree guard root
+ exit
+int po 2
+ spanning-tree guard root
+ exit
+int po 4
+ spanning-tree guard root
+ exit
+end
+
+
+========================================
+L3 Switch를 이용한 VLAN-Routing
+========================================
+!!!DSW1
+en
+conf t
+ip routing
+!
+int vlan 10
+ ip add 10.1.10.254 255.255.255.0
+ no sh
+ exit
+int vlan 30
+ ip add 10.1.30.254 255.255.255.0
+ no sh
+ exit
+int g0/1
+ no switchport
+ ip add 1.1.12.2 255.255.255.0
+ no shutdown
+ exit
+router eigrp 1
+ no auto-summary
+ network 10.0.0.0
+ network 1.0.0.0
+end
+
+
+================================
+!!!DSW2
+en
+conf t
+ip routing
+!
+int vlan 20
+ ip add 10.1.20.254 255.255.255.0
+ no sh
+ exit
+int vlan 40
+ ip add 10.1.40.254 255.255.255.0
+ no sh
+ exit
+int g0/1
+ no switchport
+ ip add 1.1.13.3 255.255.255.0
+ no shutdown
+ exit
+router eigrp 1
+ no auto-summary
+ network 10.0.0.0
+ network 1.0.0.0
+end
+
+
+=============================
+!!!EDGE
+en
+conf t
+host EDGE
+no ip domain-lo
+lin c 0
+ logg s
+ exec-t 0
+ exi
+int g0/0
+ ip add 1.1.12.1 255.255.255.0
+ no shutdown
+ exit
+int g0/1
+ ip add 1.1.13.1 255.255.255.0
+ no shutdown
+ exit
+int g0/2
+ ip add 1.1.10.1 255.255.255.0
+ no shutdown
+ exit
+router eigrp 1
+ no auto-sum
+ net 1.0.0.0
+ exit
+ip route 0.0.0.0 0.0.0.0 1.1.10.2 : 디폴트 루트 설정
+exit
+
+
+=======================
+!!!ISP
+en
+conf t
+host ISP
+no ip domain-lo
+lin c 0
+ logg s
+ exec-t 0
+ exi
+int g0/2
+ ip add 1.1.10.2 255.255.255.0
+ no shutdown
+ exit
+ip route 0.0.0.0 0.0.0.0 1.1.10.1
+exit
+
+
+
+
