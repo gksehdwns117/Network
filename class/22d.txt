@@ -1,0 +1,39 @@
+<이중화 토폴로지-Redundant Topology>
+	> 이중화의 가장 큰 목표는 안정화
+1.링크 이중화 	: 출발지부터 목적지까지의 길을 하나 더둔다
+	    	> 네트워크 기능상실(traffic) 방지, 고가용성을 높이기 위함
+		**오류발생 : Broadcast Storm , Multiple frame복사,Mac-add table 불안정
+		> 오류로 인해 하나의 링크는 block
+
+** Broadcast Storm
+: 스위치간의 Broad casting이 계속 Loop되는 오류
+> 송수신자간 프레임이 공유는 되지만 Loop되면서 Boundary폭을 다 써버리기 때문에
+  공유될 확률이 현저히 낮아진다
+> GEthernet은 일반 fast Ethernet보다 Boundary가 높기 때문에 높은 확률로 공유가 된다
+
+<STP>
+Spanning-Tree Protocol
+-root bridge	: 스위치와 스위치간의 BPDU 정보를 읽어 Bridge ID를 비교하여 가장 낮은 port가
+		  root가됨
+
+-root port	: 두개의 스위치간 여러 port을 연결 시, 송수신이 가능한 하나의 port
+		** 선출단계
+		1.스위치 내에서 root bridge까지 가는 비용이 가장 낮은 port가 선출
+		- root bridge까지의 cost + 자기 자신의 cost(누적)
+		2.sender(root로부터 받는)'s의 bridge ID가 더 좋은 port가 선출됨
+		- Bridge ID = priority + Mac
+		3.sender's의 port ID가 더 낮은 port가 선출됨
+		- 우선순위를 먼저 따지고, port number를 따짐
+		4.받는 bridge의 port 번호가 더 낮은 port가 선출됨
+
+-BPDU		: 스위치 STP 정보를 가지고 있는 데이터
+		> 그중 가장 확실한 정보를 가지고 있는 port가 선출됨
+		
+-Designated Port: 스위치 port와 또다른 스위치 port와의 비교
+		> 
+<Network>
+: 보통 스위치의 모임이 하나의 네트워크라고 칭함
+> 단, 라우터가 다르거나 스위치가 서로 연결이 되지 않을 때 네트워크도 단위가 나뉘어진다
+
+<Segment>
+: 스위치와 스위치간 연결 된 하나의 링크를 의미

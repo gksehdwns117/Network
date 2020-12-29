@@ -1,0 +1,48 @@
+
+<Native VLAN>
+: tag를 사용하지 않는 원래frame 전송을 할 수 있는 네트워크 환경
+> native의 default값을 쓰지 않는 vlan 번호로 바꿔 보안성 강화
+  *(config-if-range)#switchport trunk native vlan ??
+
+<VTP> VLAN Trunking protocol
+: 연결된 스위치들끼리 VLAN 정보를 주고 받아 자동으로 동기화하게 해주는 protocol
+  >실질적으로 관리해야 하는 스위치가 많은 경우에 유용하게 사용되지만, 보안상의 이유로 거의 사용 x
+  >최소한의 작업으로 vlan 전파 기능을 사용 목적
+-조건
+	1.vtp domain name 설정
+	2.스위치간 trunkport 설정
+	3.vtp password 일치
+**Domain : switch들의 범위
+-모드 : 기본적으로 server모드는 최소한의 설정 , 나머지는 client 모드 > 보안상의 이유
+	1.server모드
+		> VLAN 생성/수정/삭제
+		> 자신의 VLAN 정보를 상대방에게 sending 
+		> 타장치로부터 받은 정보를 상대방에게 fowarding
+		> 상대방(다른서버)의 정보를 동기화
+	2.client모드
+		> VLAN을 설정 할 수 없어 fowarding만 가능
+		> 상대방(서버)의 정보를 동기화
+	3.transparent모드(VTP 미사용)
+		> VLAN을 설정 할 수는 있음
+		> 다른 스위치로 자신의 정보를 전송(sending)하지 못하고, 정보도 동기화하지 못한다(독립성)
+		> 대신 fowarding은 가능
+		> 정보를 해당 스위치에서만 설정 하고 싶을 때 사용
+		> (PRIVATE VLAN,확장 VLAN)을 사용하기 위해 생겨난 모드
+		> 기존 switch(server)에 새로운 switch(server)를 연결 할 때 transparent모드로 붙인다
+			--> Revision Number가 항상 0이기 때문(상대 switch에 영향 x)+
+-VTP operation
+	> server와 client는 Revision Number가 큰 값이 더 최근 정보로 간주
+	> VTP 
+	** Revision Number
+-VTP Pruning
+: 자신과 상관없는 VLAN정보에 대한 트래픽을 trunk 포트가 걸러주는 의미
+  > trunk 의 bandwidth를 절약 해 줄 수 있다
+  
+
+
+
+
+**vlan이 삭제되도 소속되어있던 port는 기본 vlan 복원되지 않는다
+> 수동으로 복원
+**trunk port는 vlan 어디에도 소속되지 않아 vlan list에 존재하지 않는다
+

@@ -1,0 +1,39 @@
+<Cisco 명령어>
+#sh span vlan 1
+	> stat필드 : FWD,BLK(BPDU수신),LIS,LEN
+	> Role필드 : Desg,root(BPDU수신)
+#sh cdp(cisco discovery protocol) neighbors
+	: 직접 connected가 되어진 맞은편의 switch
+#en > conf t > hostname [name]
+	: switch 장치의 이름을 정하는 명령어
+#en > sh span vlan 1
+	: switch 장치의 정보를 출력하는 명령어
+	
+<STP process>
+	(Blocking) -> Listening -> Learning -> Fowarding
+	**Listening : 스위치끼리 BPDU를 주고받으며 root를 정하는 시간(15초)
+	> Blocking 된 포트가 Forwarding 될 때까지의 시간 50초
+	> Blocking이 되지 않은 포트가 Forwarding 될 때까지의 시간 30초
+<STP 컨버전스 시간 단축>
+1.portpast
+: Listening과 Learning상태를 거치지 않고 바로 fowarding하는 기술
+2.uplinkfast
+: block된 switch와 직접적으로 연결된 다른 fowarding 링크에 장애를 발생시켜
+  block 링크를 바로 fowarding 상태로 변경시켜주는 기술
+3.backbonefast
+: 간접적인 링크가 장애시,Blocking 상태의 port를 fowarding상태로 바꾸는 시간
+  20초를 단축시키는 기술
+> 모든 switch
+	
+<RSTP> Rapid STP
+: STP의 동작시간을 단축시키기 위한 보안점으로 나온 기술
+> BPDU 정보 공유 과정중 다른 스위치의 정보를 기다리지(timing)않고
+  하나의 과정이 끊나면 바로 다음 과정으로 넘어가는 STP(stop watch)
+<CST>
+: VLAN으 갯수 상관없이 하나의 STP(process)를 제어 - cpu와 ram 점유율의 최소화
+<PSVT>
+: VLAN마다 개별 STP를 동작 (Per VLAN ST)
+<PSRST>
+: VLAN마다 개별 RSTP를 동작 
+<MIST => MST>
+: VLAN을 그룹단위로 묶어 하나의 STP를 동작 > 

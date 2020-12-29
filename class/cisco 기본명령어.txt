@@ -1,0 +1,216 @@
+================================================================================
+명령어
+"Switch>" 을 prompt라고 함
+1.prompt 이름에 따라 환경이 달라짐
+
+2.en=enable
+  conf t = config terminal
+  int .. = interface e0/0 
+
+3.exit명령은 빠져나올때 단계별로 사용
+4.Help사용하기 > ?
+================================================================================
+
+
+MLS01>enable
+: 사용자모드에서 관리자모드로 전환
+MLS01#conf t 	
+: 구성모드로 들어가기
+MLS01(config)#service password-encryption
+: 모든 패스워드를 간편하게 암호화하는 명령어
+MLS01(config)#enable secret ciscosec
+: enable모드로 진입시 'ciscosec'으로 패스워드를 설정해주는 명령어
+MLS01(config)#no ip domain-lookup
+: 사용자가 실수로 존재하지 않는 명령어를 입력할 때 IP Address로 인식,
+  찾으려는 메세지가 뜨게되는데 이를 방지하기 위해 disable 시키는 명령어
+MLS01(config)#interface e0/0
+: interface 0/0번 Ethernet으로 진입
+MLS01(config-if)#no switchport
+: 해당 interface가 라우티드 포트로 동작하게 해서 ,ip를 할당하게 해주는 명령어
+MLS01(config-if)#ip address 10.1.1.1 255.255.255.0
+: 0/0 Ethernet으로 해당 ip를 할당
+MLS01(config-if)#no shutdown
+: 해당 interface 작동
+MLS01(config-if)#exit
+MLS01(config)#line con 0
+: 콘솔(라우터를 관리하는 기본 interface) 환경설정모드로 이동
+MLS01(config-line)#exec-timeout 0 0
+: 먼저오는 '0'은 분을 뜻하고, 뒤의 '0'은 초를 나타냄.
+  0 0은 무한대를 뜻하며,  세션을 무한대로 유지하는 명령어
+MLS01(config-line)#password conpass
+: console환경 진입시 password를 설정
+MLS01(config-line)#logging synchronous
+: console 메세지 동기화 
+MLS01(config-line)#login
+: 해당 단계가 끝나면 cosole 환겨으로 로그인
+MLS01(config-line)#exit
+MLS01(config)#line vty 0 4 	
+: 0에서 4까지 총 5개의 텔넷 환경설정모드로 이동
+MLS01(config-line)#password telpass	
+: 텔넷 접속 패스워드 설정
+MLS01(config-line)#login
+:loginlocal ? 
+MLS01(config-line)#exit
+
+*** root bridge 전환
+1.자동
+2.반자동
+-MLS01#debug spanning-tree events
+-MLS02(config-line)#spanning-tree vlan 1 root primary
+-MLS01(config-line)#spnnaing-tree vlan 1 root secondary
+3.수동 : 사용자가 priority를 낮게 조정하여 root bridge 
+priorty 0 (4096단위로 증가)
+-MLS01(config)#spanning-tree vlan 1 priority (0~ + 4096 주기)
+> 4096단위로 증가 출력
+
+*** do command
+	: 구성모드에서 
+*** (no)명령어
+ 	: 설정했던 명령어 취소
+*** priority 초기 설정으로 초기화
+-MLS01#sh run | include spanning-tree
+{spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree vlan 1 priority 4096}
+MLS01(config)#no spanning-tree vlan 1 priority 4096
+
+*** 
+-sh cdp nei
+
+*** 2개의 switch에 연결된 port의 trunk 설정
+ASW01(config)#int ra e1/2 - 3
+:interface range ethernet 1/2 - 3
+ASW01(config-if-range)#sw m a
+:switchport mode access
+ASW01(config-if-range)#switchport nonegotiate
+ASW01(config-if-range)#switchport trunk encapsulation dot1q
+ASW01(config-if-range)#switchport mode trunk
+ASW01(config-if-range)#exit
+
+ASW01(config-if-range)#sw a v 10
+access vlan 10
+
+ASW01# show vlan brief
+#copy running-config startup-config
+
+
+(config)#ena se ciscosec
+(config)#lin con 0
+(config-line)#exec-t 0
+(config-line)#login lo
+(config-line)#line vty 0 4
+(config-line)#login lo
+(config-line)#exit
+
+left#sh int trunk
+
+*** native vlan number 설정
+left(config-if-range)#switchport trunk native vlan 10
+
+
+*** vtp domain(이름),mode,password,version 변경
+SW1(config)#vtp ?
+  domain    Set the name of the VTP administrative domain.
+  mode      Configure VTP device mode
+  password  Set the password for the VTP administrative domain
+  version   Set the adminstrative domain to VTP version
+
+*** vtp mode 변경
+right(config)#vtp mode ?
+  client       Set the device to client mode.
+  server       Set the device to server mode.
+  transparent  Set the device to transparent mode.
+
+*** vlan trunk port 상태 조정
+SW1(config-if)#switchport trunk allowed vlan ?
+  WORD    VLAN IDs of the allowed VLANs when this port is in trunking mode
+  add     add VLANs to the current list
+  all     all VLANs
+  except  all VLANs except the following
+  none    no VLANs
+  remove  remove VLANs from the current list
+
+** Routing table (List of IP Network)
+R1#sh ip route
+....
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 2 subnets, 2 masks
+C        10.1.10.0/24 is directly connected, Ethernet0/0
+L        10.1.10.1/32 is directly connected, Ethernet0/0
+
+> 라우터는 라우팅 테이블에 근거하여 패킷을 전송 - 존재하지않으면 해당 패킷을 폐기
+
+** Routing 경유 (ip route)
+	ip route 10.1.20.0 255.255.255.0(목적지) + 10.1.20.2(neighbor's 경유지)
+	> 모든 라우터는 neighbor(연결되어있는) 라우터를 경유해서 감
+R1(config)#ip route 10.1.20.0 255.255.255.0 e0/0 10.1.10.2
+R1(config)#do sh ip route
+Gateway of last resort is not set
+
+      10.0.0.0/8 is variably subnetted, 3 subnets, 2 masks
+C        10.1.10.0/24 is directly connected, Ethernet0/0
+L        10.1.10.1/32 is directly connected, Ethernet0/0
+S        10.1.20.0/24 	[1/0] 		via 	10.1.10.2, 	Ethernet0/0
+> S(경유) 목적지IP	      	목적지포트		경유	경유지IP		access port
+
+R4(config)#ip route 10.1.20.0 255.255.255.0 s1/2 10.1.34.3 ?
+  ?
+  <1-255>    Distance metric for this route (우선순위)
+  multicast  multicast route
+  name       Specify name of the next hop
+  permanent  permanent route
+  tag        Set tag for this route
+  track      Install route depending on tracked item
+
+** 특정 단어(문단?)만 출력 (inc)
+R2(config)#do sh run | inc ip route
+ip route 10.1.34.0 255.255.255.0 Serial1/0 10.1.20.3
+ip route 10.1.34.0 255.255.255.0 Serial1/1 10.1.24.4 200
+ip route 10.1.35.0 255.255.255.0 Serial1/0 10.1.20.3
+
+** dhcp 할당 명령어	
+DHCP(config)#ip dhcp excluded-address 10.1.10.254
+DHCP(config)#ip dhcp excluded-address 10.1.20.254
+> 특정 ip는 dhcp로 할당하지 않음
+DHCP(config)#ip dhcp excluded-address 10.1.10.1 10.1.10.20
+DHCP(config)#ip dhcp excluded-address 10.1.20.1 10.1.20.20
+> 특정 ip(범위 1~20)는 dhcp로 할당하지 않음
+DHCP(config)#ip dhcp pool v10
+> vlan 10의 dhcp 저장공간 접근
+DHCP(dhcp-config)#network 10.1.10.0 255.255.255.0
+> dhcp 할당 ip주소 설정
+DHCP(dhcp-config)#default-router 10.1.10.254
+> default GW 설정
+DHCP(dhcp-config)#dns-server 8.8.8.8
+> DNS 설정
+DHCP(dhcp-config)#lease 0 10
+		  >시간 (일 시간)
+> lease time 설정
+DHCP#sh run | sec dhcp
+> 현재 dhcp에 대한 설정값 출력
+ip dhcp excluded-address 10.1.10.254
+ip dhcp excluded-address 10.1.20.254
+ip dhcp excluded-address 10.1.10.1 10.1.10.20
+ip dhcp excluded-address 10.1.20.1 10.1.20.20
+ip dhcp pool v10
+ network 10.1.10.0 255.255.255.0
+ default-router 10.1.10.254
+ dns-server 8.8.8.8
+ lease 0 10
+ip dhcp pool v20
+ network 10.1.20.0 255.255.255.0
+ dns-server 8.8.8.8
+ default-router 10.1.20.254
+ lease 0 10
+
+** PC에서 dhcp 할당
+VPCS> ip dhcp
+> 해당 pc에 ip를 자동으로 할당받는 명령어
+DDORA IP 10.1.10.21/24 GW 10.1.10.254
+
+** dhcp relay agent
+ip helper-address (server와 연결된 port ip)
+
+
+

@@ -1,0 +1,33 @@
+<eve web server>
+**eve 설치 > win10scp실행 후 파일 이동 > 설정 명령어 입력 후 
+  > 윈도우 브라우저로 해당 ip주소 접속 > 접속 후 실제 네트워크 환경 구성
+
+<VLAN>
+-LAN 	: local area network , A broadcast Domain(하나의 브로드캐스팅 영역)
+	> 스위치의 모든 집합(스위치는 broadcast를 분할 x)
+	** 라우터 - 물리적인 broadcast를 분할해주는 장치 ( broadcast를 스위칭 해주지 않음 )
+		> 라우터가 broadcast를 분할해주지 않으면 -> DDos 공격 발생
+		> 외부와 내부를 연결해주는게 주목적
+-VLAN	: virtual LAN 
+	  스위치가 라우터 기능을 하게 해주는 LAN
+	> 내부에서 broadcast를 차단해줘야 할 때 사용(ex.회사)
+	  내부에서 네트워크 환경을 나눠줘야 할 때 사용하기위해서 스위치에 라우터기능을 부합
+	  내부 네트워크 환경에서 라우터는 외부 연결망과 연결해 줄 때 사용
+	> L2 개념에서 
+
+	
+<port의 특성>
+1.trunk
+: 여러 vlan의 정보를 전송
+-ISL : cisco
+-Dot1g: standard
+2.access
+: 한 vlan에 정보만 전송
+<root port>
+<PVRSTP>
+<load sharing(=balancing)>
+
+
+
+
+

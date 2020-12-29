@@ -1,0 +1,44 @@
+
+<VLAN data>
+-flash 메모리 : 파일시스템 메모리,파일 생성/삭제/복사에 관련된 메모리를 저장
+> VLAN의 정보가 저장되어 있는 메모리 (vlan.dat) 
+
+<Toolkits> 	STP(1998) -> Toolkits(2004) -> RSTP
+- Convergence(fast) + Guard
+	1.Portfast
+	: 포트가 활성화되면 바로 전송상태(forwarding)으로 바꿔주는 것
+	  > Listening , learning 과정을 jump하여 시간을 줄여줌
+	  > PC,서버,라우터(non-switch)에 직접 연결된 스위치에 주로 설정한다(span pastport) 
+	  > Edgenode에 연결
+	  > BPDU를 주고 받을 수 없는 환경에 활성화(non-switch)
+	  > 스위치간의 portfast는 Rooping 오류가 발생한다
+	  > 스위치에서 기본값으로 설정하면 trunk 포트를 제외한 모든 포트가 설정됨(span pastport default)
+		ex. client..client  - switch - server
+	  > 트렁크인 포트에도 Portfast를 설정 할 수는 있음 (span pastport trunk)
+		ex. router - switch
+	2.uplinkfast
+	: blocking된 포트와 직접적으로 연결된 link의 반대편 port를 blocking 상태로 하여
+	  fowarding 상태로 유지하는 것
+	> 해당 스위치를 uplinkfast 상태로 설정하여 바로 fowarding되게 만든다
+	  (span uplinkfast)
+	3.backbonefast
+	: blocking된 포트와 간접적으로 연결된 link의 port를 blocking 상태로 하여
+	  20초의 MAX age를 생략하고 바로 listening으로 상태로 변경
+	> 결과적으로 50초의 컨버전스(convergence) 시간을 30초로 단축시킨다
+- Guard
+	1.BPDU Guard
+	: postfast 처럼 BPDU를 교환하지 않는 포트에 설정해 놓는 guard기술
+	  > 설정 후 , 해당 포트에서 BPDU를 수신하게 되면 port를 shutdown시킨다
+	2.BPDU Filter
+	: BPDU를 수/송신을 차단하는 guard 기술
+	  > 정상적인 스위치간의 통신에서는 root bridge가 여러개 생기는 오류가 발생하여 사용을 권장하지 않음	
+	3.Root Guard
+	: 새로 연결된 스위치가 Root Bridge가 되는 것을 방지하기 위한 guard 기술
+	4.Loop Guard
+	: ??
+*** Unidirectional link failure
+
+**Listening -  
+
+
+
